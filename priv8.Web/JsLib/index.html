@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Akave Upload with Lit Encryption</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 20px auto;
+            padding: 20px;
+        }
+        button {
+            padding: 10px 20px;
+            margin: 10px 0;
+            cursor: pointer;
+        }
+        #status {
+            margin-top: 20px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+    </style>
+
+</head>
+<body>
+    <h1>Akave Upload with Lit Encryption</h1>
+    <button onclick="window.akaveLib.uploadTestJson()">Upload Encrypted Test JSON</button>
+    <button onclick="window.akaveLib.getLastUpload()">Download and Decrypt Last Upload</button>
+    <div id="status"></div>
+
+    <script src="dist/main.js"></script>
+</body>
+</html>

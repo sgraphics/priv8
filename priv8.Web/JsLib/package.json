@@ -4,12 +4,29 @@
   "description": "Js endpoints for Priv8 dapp",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "webpack",
+    "dev": "webpack --watch",
+    "serve": "node server.js"
   },
   "author": "",
   "license": "ISC",
   "devDependencies": {
+    "crypto-browserify": "^3.12.1",
+    "stream-browserify": "^3.0.0",
+    "vm-browserify": "^1.1.2",
     "webpack": "^5.96.1",
     "webpack-cli": "^5.1.4"
+  },
+  "dependencies": {
+    "@lit-protocol/auth-helpers": "^6.11.0",
+    "@lit-protocol/constants": "^6.11.0",
+    "@lit-protocol/lit-node-client": "^6.11.0",
+    "axios": "^1.7.7",
+    "buffer": "^6.0.3",
+    "ethers": "^5.7.2",
+    "express": "^4.21.1",
+    "form-data": "^4.0.1",
+    "process": "^0.11.10"
   }
 }
