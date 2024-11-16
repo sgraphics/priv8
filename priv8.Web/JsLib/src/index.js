@@ -1,7 +1,8 @@
 import * as LitJsSdk from '@lit-protocol/lit-node-client';
 import * as ethers from 'ethers';
-import { LitNetwork } from "@lit-protocol/constants";
-import { LitAccessControlConditionResource, LitAbility } from "@lit-protocol/auth-helpers";
+import { LitNetwork, LIT_RPC } from "@lit-protocol/constants";
+import { LitContracts } from "@lit-protocol/contracts-sdk";
+import { LitAccessControlConditionResource, LitAbility, createSiweMessageWithRecaps, generateAuthSig } from "@lit-protocol/auth-helpers";
 
 const API_BASE_URL = 'http://localhost:8000';
 
@@ -11,7 +12,7 @@ class Lit {
   litNodeClient;
   chain;
 
-  constructor(chain = 'ethereum') {
+  constructor(chain = 'scrollSepolia') {
     this.chain = chain;
   }
 
@@ -22,8 +23,13 @@ class Lit {
     });
     await this.litNodeClient.connect();
     console.log('✅ Lit Protocol Client connected!');
+  }
 
-    const walletWithCapacityCredit = new ethers.Wallet("xxx");
+  async createCapacityDelegationAuthSig(){    
+    const walletWithCapacityCredit = new ethers.Wallet(
+      "xxx",
+      new ethers.providers.JsonRpcProvider(LIT_RPC.CHRONICLE_YELLOWSTONE)
+    );
 
     let contractClient = new LitContracts({
       signer: walletWithCapacityCredit,
@@ -38,7 +44,18 @@ class Lit {
       // requestsPerSecond: 10,
       daysUntilUTCMidnightExpiration: 2,
     });
+
+    const { capacityDelegationAuthSig } =
+      await this.litNodeClient.createCapacityDelegationAuthSig({
+        uses: '100000',
+        dAppOwnerWallet: walletWithCapacityCredit,
+        capacityTokenId: capacityTokenIdStr,
+        //test accounts
+        delegateeAddresses: ["0xe67bEE5cf3f48504FECEA83dd463889DDDD04bDD"],
+      });
+
     alert(`Capacity token ID: ${capacityTokenIdStr}`);
+    alert(`Capacity delegation auth sig: ${capacityDelegationAuthSig}`);
   }
 
   async getSessionSigs(){
@@ -87,6 +104,13 @@ class Lit {
     // Define the Lit resource
     const litResource = new LitAccessControlConditionResource('*');
 
+    const capacityDelegationAuthSig = {
+      "sig": "0xcd5ac300bfbd5da82314ee13a98532de9920711cf2e17d47a1ab55de6399d759693d6f21103204b91c8c38c9a66ffd7739b695e8eaec283b30adc1b216471f411c",
+      "derivedVia": "web3.eth.personal.sign",
+      "signedMessage": "localhost wants you to sign in with your Ethereum account:\n0xe67bEE5cf3f48504FECEA83dd463889DDDD04bDD\n\nThis is a test statement.  You can put anything you want here. I further authorize the stated URI to perform the following actions on my behalf: (1) 'Auth': 'Auth' for 'lit-ratelimitincrease://55698'.\n\nURI: lit:capability:delegation\nVersion: 1\nChain ID: 1\nNonce: 0xba1cb89f27f2b65e23abe3d35b92841ac54d531d1c6ca4c3360abdbe05f21b81\nIssued At: 2024-11-16T02:53:23.079Z\nExpiration Time: 2024-11-23T02:53:23.062Z\nResources:\n- urn:recap:eyJhdHQiOnsibGl0LXJhdGVsaW1pdGluY3JlYXNlOi8vNTU2OTgiOnsiQXV0aC9BdXRoIjpbeyJkZWxlZ2F0ZV90byI6WyJlNjdiRUU1Y2YzZjQ4NTA0RkVDRUE4M2RkNDYzODg5RERERDA0YkREIl0sIm5mdF9pZCI6WyI1NTY5OCJdLCJ1c2VzIjoiMTAwMDAwIn1dfX0sInByZiI6W119",
+      "address": "0xe67bEE5cf3f48504FECEA83dd463889DDDD04bDD"
+    };
+
     // Get the session signatures
     const sessionSigs = await this.litNodeClient.getSessionSigs({
         chain: this.chain,
@@ -132,7 +156,7 @@ export async function uploadTestJson() {
       {
         contractAddress: '',
         standardContractType: '',
-        chain: 'ethereum',
+        chain: 'scrollSepolia',
         method: 'eth_getBalance',
         parameters: [':userAddress', 'latest'],
         returnValueTest: {
