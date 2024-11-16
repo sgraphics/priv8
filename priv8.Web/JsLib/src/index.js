@@ -3,6 +3,15 @@ import * as ethers from 'ethers';
 import { LitNetwork, LIT_RPC } from "@lit-protocol/constants";
 import { LitContracts } from "@lit-protocol/contracts-sdk";
 import { LitAccessControlConditionResource, LitAbility, createSiweMessageWithRecaps, generateAuthSig } from "@lit-protocol/auth-helpers";
+import { CHAIN_NAMESPACES, IAdapter, IProvider, WEB3AUTH_NETWORK } from "@web3auth/base";
+import { EthereumPrivateKeyProvider } from "@web3auth/ethereum-provider";
+import { Web3Auth, Web3AuthOptions } from "@web3auth/modal";
+import { getDefaultExternalAdapters } from "@web3auth/default-evm-adapter";
+
+import {
+  AccountAbstractionProvider,
+  TrustSmartAccount,
+} from "@web3auth/account-abstraction-provider";
 
 const API_BASE_URL = 'http://localhost:8000';
 
@@ -60,7 +69,7 @@ class Lit {
 
   async getSessionSigs(){
     // Connect to the wallet
-    const provider = new ethers.providers.Web3Provider(window.ethereum);
+    const provider = new ethers.providers.Web3Provider(provider);
     await provider.send("eth_requestAccounts", []);
     const signer = provider.getSigner();
     const walletAddress = await signer.getAddress();
@@ -125,6 +134,89 @@ class Lit {
     });
     return sessionSigs;
  }
+}
+
+function uiConsole(...args) {
+  console.log(...args);
+}
+
+export async function logout() {
+  await web3auth.logout();
+  setProvider(null);
+  setLoggedIn(false);
+  uiConsole("logged out");
+};
+
+export async function login()
+{
+  const clientId = "BBkmuo6mzZ8EFeLFt0RufSqrjXRcP_iLQszr0xHkVXfXqeWRnQ5YxS2wzHBNYJ3N50pMJqu36klUt9ah8zZqaqw";
+
+  const chainConfig = {
+    chainNamespace: CHAIN_NAMESPACES.EIP155,
+    chainId: "0x8274f",
+    rpcTarget: "https://sepolia-rpc.scroll.io/",
+    displayName: "Scroll Sepolia Testnet",
+    blockExplorerUrl: "https://sepolia.scrollscan.com",
+    ticker: "ETH",
+    tickerName: "Ethereum",
+    logo: "https://cryptologos.cc/logos/ethereum-eth-logo.png",
+  };
+
+  const accountAbstractionProvider = new AccountAbstractionProvider({
+    config: {
+      chainConfig,
+      smartAccountInit: new TrustSmartAccount(),
+      bundlerConfig: {
+        url: `https://api.pimlico.io/v2/534351/rpc?apikey=pim_KW7kFzZcNvPKjaEjLSdZXj`,
+      },
+      paymasterConfig: {
+        url: `https://api.pimlico.io/v2/534351/rpc?apikey=pim_KW7kFzZcNvPKjaEjLSdZXj`,
+      },
+    },
+  });
+
+  const privateKeyProvider = new EthereumPrivateKeyProvider({
+    config: { chainConfig },
+  });
+
+  const web3AuthOptions = {
+    clientId,
+    web3AuthNetwork: WEB3AUTH_NETWORK.SAPPHIRE_DEVNET,
+    privateKeyProvider,
+    accountAbstractionProvider,
+    // This will allow you to use EthereumPrivateKeyProvider for
+    // external wallets, while use the AccountAbstractionProvider
+    // for Web3Auth embedded wallets.
+    useAAWithExternalWallet: true,
+  }
+  const web3auth = new Web3Auth(web3AuthOptions);
+
+  const adapters = await getDefaultExternalAdapters({ options: web3AuthOptions });
+  adapters.forEach((adapter) => {
+    web3auth.configureAdapter(adapter);
+  });
+  await web3auth.initModal();
+  setProvider(web3auth.provider);
+
+  if (web3auth.connected) {
+    setLoggedIn(true);
+  }else{
+    const web3authProvider = await web3auth.connect();
+    setProvider(web3authProvider);
+    if (web3auth.connected) {
+      setLoggedIn(true);
+    }
+  }
+}
+
+let provider = null;
+function setProvider(provider) {
+  provider = provider;
+}
+
+let loggedIn = false;
+function setLoggedIn(loggedIn) {
+  loggedIn = loggedIn;
 }
 
 // Create a singleton instance
